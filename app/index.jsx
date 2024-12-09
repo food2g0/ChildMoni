@@ -14,8 +14,8 @@ const { width } = Dimensions.get("window");
 
 const slides = [
   { id: "1", image: require('./../assets/images/onboarding.jpg'), title: "Welcome to MoniChild" },
-  { id: "2", image: require('./../assets/images/favicon.png'), title: "Discover Features" },
-  { id: "3", image: require('./../assets/images/favicon.png'), title: "Get Started!" },
+  { id: "2", image: require('./../assets/images/cover.png'), title: "Discover Features" },
+  { id: "3", image: require('./../assets/images/child.png'), title: "Get Started!" },
 ];
 
 export default function Index() {
