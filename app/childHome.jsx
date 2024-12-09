@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, Linking, Ale
 import { BackHandler } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/Ionicons'; // Importing Ionicons
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const childrenList = [
   { id: '1', name: 'John Doe', image: 'https://randomuser.me/api/portraits/men/1.jpg' },

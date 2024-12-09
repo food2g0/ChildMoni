@@ -36,7 +36,7 @@ export default function ChildUserScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.childCard} onPress={() => handleChildPress(item)}>
             <View style={styles.cardHeader}>
-              <Icon name="user" size={24} color="#FFF" />
+              <Icon name="user" size={24} color="#000" />
               <Text style={styles.childName}>{item.name}</Text>
             </View>
             <Text style={styles.childAge}>Age: {item.age}</Text>
@@ -91,12 +91,12 @@ const styles = StyleSheet.create({
   childName: {
     fontSize: 16,
     fontFamily: 'Poppins-medium',
-    color: '#FFF',
+    color: '#000',
     marginLeft: 10,
   },
   childAge: {
     fontSize: 14,
     fontFamily: 'Poppins-regular',
-    color: '#E5E5E5',
+    color: '#000',
   },
 });
