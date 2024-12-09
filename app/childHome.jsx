@@ -1,37 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image } from 'react-native';
-import { BackHandler,Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, Linking, Alert } from 'react-native';
+import { BackHandler } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Ionicons'; // Importing Ionicons
 
 const childrenList = [
   { id: '1', name: 'John Doe', image: 'https://randomuser.me/api/portraits/men/1.jpg' },
 ];
 
 const activitiesList = [
-  { id: '1', activity: 'Facebook', timeSpent: '2 hours' },
-  { id: '2', activity: 'Youtube', timeSpent: '1.5 hours' },
-  { id: '3', activity: 'Tiktok', timeSpent: '1 hour' },
-  { id: '4', activity: 'Instagram', timeSpent: '3 hours' },
+  { id: '1', activity: 'Facebook', url: 'fb://', name: 'Facebook', icon: 'logo-facebook' },
+  { id: '2', activity: 'YouTube', url: 'youtube://', name: 'YouTube', icon: 'logo-youtube' },
+  { id: '3', activity: 'TikTok', url: 'tiktok://', name: 'TikTok', icon: 'logo-tiktok' },
+  { id: '4', activity: 'Instagram', url: 'instagram://', name: 'Instagram', icon: 'logo-instagram' },
 ];
 
 export default function ChildHome() {
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert("Hold on!", "You can't go back to the login screen.", [
+        { text: "OK", onPress: () => null }
+      ]);
+      return true;
+    };
 
-    useEffect(() => {
-        const backAction = () => {
-          Alert.alert("Hold on!", "You can't go back to the login screen.", [
-            { text: "OK", onPress: () => null }
-          ]);
-          return true;
-        };
-    
-        const backHandler = BackHandler.addEventListener(
-          "hardwareBackPress",
-          backAction
-        );
-    
-        return () => backHandler.remove();
-      }, []);
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   const [children, setChildren] = useState(childrenList);
   const [mapRegion, setMapRegion] = useState({
@@ -42,6 +42,17 @@ export default function ChildHome() {
   });
 
   const navigation = useNavigation();
+
+  // Function to open the app based on the URL
+  const openApp = (url) => {
+    Linking.canOpenURL(url).then(supported => {
+      if (supported) {
+        Linking.openURL(url);
+      } else {
+        Alert.alert("App not installed", "The app is not installed on your device.");
+      }
+    });
+  };
 
   const renderHeader = () => (
     <View style={styles.container}>
@@ -71,9 +82,14 @@ export default function ChildHome() {
 
   const renderItem = ({ item }) => (
     <View style={styles.activitySection}>
-      <Text style={styles.activityText}>
-        {item.activity} - <Text style={styles.timeSpent}>{item.timeSpent}</Text>
-      </Text>
+      <Text style={styles.activityText}>{item.activity}</Text>
+      <TouchableOpacity
+        style={styles.openAppButton}
+        onPress={() => openApp(item.url)} // Open the app when clicked
+      >
+        <Icon name={item.icon} size={20} color="#fff" style={styles.icon} />
+        <Text style={styles.buttonText}>Open {item.name}</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -121,13 +137,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   childImageLarge: {
-    width: 100, // Increased size
+    width: 100,
     height: 100,
     borderRadius: 50,
     marginBottom: 10,
   },
   childNameLarge: {
-    fontSize: 16, // Larger font size for the name
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#14213d',
     fontFamily: 'Poppins',
@@ -157,9 +173,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#14213d',
     fontFamily: 'Poppins',
+    marginBottom: 10,
   },
-  timeSpent: {
-    color: '#007BFF',
-    fontWeight: 'bold',
+  openAppButton: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignItems: 'center',
+    flexDirection: 'row', // Added to make icon and text align in row
+    justifyContent: 'center', // Center align content horizontally
+    marginTop: 10,
+  },
+  icon: {
+    marginRight: 10, // Spacing between icon and text
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: 'Poppins',
   },
 });
