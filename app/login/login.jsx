@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'; // Import useNavigation hook
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Pressable, Alert } from "react-native";
+import { View, Text,Image, TextInput, TouchableOpacity, StyleSheet, Pressable, Alert } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome"; // Import icons
 
 export default function LoginScreen() {
@@ -25,7 +25,7 @@ export default function LoginScreen() {
     }
 
     console.log("Email:", email, "Password:", password);
-    navigation.navigate('home'); // Navigate to home screen
+    navigation.navigate('chooseScreen'); // Navigate to home screen
   };
 
   const handleSignupPress = () => {
@@ -33,10 +33,17 @@ export default function LoginScreen() {
   };
 
   return (
+    
     <View style={styles.container}>
+        <View style={styles.logoContainer}>
+        {/* <Image
+     source={require('./../assets/images/logo.png')}
+        style={styles.logo}
+      /> */}
+      </View>
       <View style={styles.welcomeContainer}>
-        <Text style={styles.welcomeText}>Welcome</Text>
-        <Text style={styles.backText}>Back!</Text>
+        <Text style={styles.welcomeText}>Welcome To</Text>
+        <Text style={styles.backText}>Child Moni!</Text>
       </View>
 
       <View style={styles.inputContainer}>
@@ -103,9 +110,10 @@ const styles = StyleSheet.create({
     color: "#003741", 
   },
   backText: {
-    fontSize: 28,
+    fontSize: 20,
     fontFamily: 'Poppins-medium',
-    color: "#003741",
+    color: "#ff9ed1",
+
   },
   inputContainer: {
     flexDirection: "row",

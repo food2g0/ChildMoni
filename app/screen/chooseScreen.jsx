@@ -6,11 +6,11 @@ const ChooseScreen = () => {
   const navigation = useNavigation();
 
   const handleParentPress = () => {
-    navigation.navigate('login/login'); 
+    navigation.navigate('Pin'); 
   };
 
   const handleChildPress = () => {
-    navigation.navigate('childLogin'); 
+    navigation.navigate('allChild'); 
   };
 
   return (

@@ -18,6 +18,9 @@ import AppLimitsScreen from './screen/AppLimitsScreen';
 import GPSScreen from './screen/GpsScreen';
 import ChildLogin from './login/childLogin';
 import ChildHome from './childHome';
+import Pin from './pin';
+import allChild from './screen/AllChild';
+import ChildPin from './screen/ChildPin';
 
 
 // Screens for Tabs
@@ -193,6 +196,26 @@ export default function RootLayout() {
         name="login/login"
         component={LoginScreen}
         options={{ headerShown: false }}
+      />
+         <Stack.Screen
+        name="Pin"
+        component={Pin}
+        options={{ headerShown: false }}
+      />
+         <Stack.Screen
+        name="allChild"
+        component={allChild}
+      
+        options={{ 
+          title: 'My Children',headerShown: true }}
+      />
+
+<Stack.Screen
+        name="ChildPin"
+        component={ChildPin}
+      
+        options={{ 
+          title: 'Pin',headerShown: true }}
       />
         <Stack.Screen
         name="childLogin"

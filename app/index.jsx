@@ -52,7 +52,7 @@ export default function Index() {
 
   // Handle "Continue" button press
   const handleContinue = () => {
-    navigation.navigate("chooseScreen");  // Directly navigate to chooseScreen
+    navigation.navigate("login/login");  // Directly navigate to chooseScreen
   };
 
   return (

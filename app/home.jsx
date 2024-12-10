@@ -50,10 +50,13 @@ export default function HomeScreen() {
         <FlatList
           data={children}
           renderItem={({ item }) => (
-            <View style={styles.childItemContainer}>
+            <TouchableOpacity
+              style={styles.childItemContainer}
+              onPress={() => navigation.navigate('ChildDetails')}
+            >
               <Image source={{ uri: item.image }} style={styles.childImage} />
               <Text style={styles.childName}>{item.name}</Text>
-            </View>
+            </TouchableOpacity>
           )}
           keyExtractor={(item) => item.id}
           horizontal

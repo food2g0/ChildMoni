@@ -1,16 +1,32 @@
 import React, { useState } from "react";
 import { Link } from "expo-router";
-import { View, Text, TextInput, Pressable, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, Pressable, TouchableOpacity, StyleSheet, Modal, ScrollView, } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { useNavigation } from "@react-navigation/native"; // Import navigation
+import { useNavigation } from "@react-navigation/native"; // Import navigati
 
 export default function Signup() {
+
+  const [isTermsChecked, setIsTermsChecked] = useState(false);
+
+  const toggleCheckbox = () => {
+    if (!isTermsChecked && !hasReadTerms) {
+      setIsModalVisible(true); // Show modal if the terms haven't been read
+    } else {
+      setIsTermsChecked(!isTermsChecked);
+    }
+  };
+  const handleConfirmRead = () => {
+    setHasReadTerms(true);
+    setIsModalVisible(false);
+    setIsTermsChecked(true);
+  };
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [hasReadTerms, setHasReadTerms] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -30,7 +46,7 @@ export default function Signup() {
 
   const validatePhone = (phone) => {
     if (!phone) return "Phone number is required.";
-    if (!/^\d{10,}$/.test(phone)) return "Phone number must have at least 10 digits.";
+    if (!/^\d{11,}$/.test(phone)) return "Phone number must have at least 11 digits.";
     return "";
   };
 
@@ -111,6 +127,7 @@ export default function Signup() {
           value={phone}
           onChangeText={handlePhoneChange}
           keyboardType="phone-pad"
+          maxLength={11}
         />
       </View>
       {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
@@ -145,15 +162,77 @@ export default function Signup() {
       </View>
       {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
 
+      <TouchableOpacity onPress={toggleCheckbox} style={styles.checkboxContainer}>
+        <View style={[styles.checkbox, isTermsChecked && styles.checked]}>
+          {isTermsChecked && <Icon name="check" size={14} color="#FFF" />}
+        </View>
+        <Text style={styles.checkboxText}>
+          I agree to the{" "}
+          <Text style={styles.link} onPress={() => setIsModalVisible(true)}>
+            Terms
+          </Text>{" "}
+          and{" "}
+          <Text style={styles.link} onPress={() => setIsModalVisible(true)}>
+            Privacy Policy
+          </Text>
+        </Text>
+      </TouchableOpacity>
+
+      {/* Modal */}
+      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Terms and Privacy Policy</Text>
+            <ScrollView style={styles.scrollContainer}>
+            <Text style={styles.modalText}>
+These Terms and Conditions (“Terms”) govern your use of the MoniChild: Parental Monitoring Application (“ChildMoni”). By downloading, installing, and using the app, you agree to comply with and be bound by these Terms.
+1. Acceptance of Terms
+By using the app, you agree to be bound by these Terms. If you do not agree with any part of these Terms, you must discontinue use of the app immediately.
+2. User Eligibility
+The app is intended for use by parents or legal guardians of children aged 3-9. By using the app, you represent that you are at least 18 years old or have legal parental or guardian authority over the child being monitored.
+3. User Responsibilities
+You are responsible for maintaining the confidentiality of your account login credentials.
+You agree to use the app solely for monitoring and managing your child’s digital activities, and not for any unlawful or malicious purposes.
+You must ensure that you have obtained proper consent from the child and other individuals  before enabling location tracking or other monitoring features.
+4. Prohibited Activities
+You agree not to:
+Use the app in violation of any applicable laws or regulations.
+Attempt to reverse-engineer, decompile, or tamper with the app’s code.
+Exploit the app to monitor or track any individual without their consent.
+5. License
+We grant you a limited, non-transferable, non-exclusive, and revocable license to use the app for personal purposes, in accordance with these Terms. You may not use the app for any commercial purposes without our express consent.
+6. Third-Party Services
+The app integrates with third-party services such as Firebase and Google Maps. By using the app, you agree to comply with the terms and policies of these third-party services.
+7. Termination
+We reserve the right to suspend or terminate your access to the app at any time, with or without cause or notice. Termination of your account will not limit any of our rights or remedies.
+8. Disclaimer of Warranties
+The app is provided "as is" without any warranties of any kind, either express or implied. We do not guarantee that the app will be free from errors, bugs, or interruptions.
+9. Limitation of Liability
+In no event shall we be liable for any direct, indirect, incidental, consequential, or punitive damages arising out of or in connection with your use of the app.
+
+            </Text>
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={handleConfirmRead}
+            >
+              <Text style={styles.modalButtonText}>I Have Read</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+
+
       <TouchableOpacity
         style={[
           styles.button,
-          emailError || phoneError || passwordError || confirmPasswordError
+          emailError || phoneError || passwordError || confirmPasswordError || !isTermsChecked
             ? { backgroundColor: "#ccc" }
             : { backgroundColor: "#ADD8E6" },
         ]}
         disabled={
-          !!emailError || !!phoneError || !!passwordError || !!confirmPasswordError
+          !!emailError || !!phoneError || !!passwordError || !!confirmPasswordError || !isTermsChecked
         }
         onPress={handleSignup}
       >
@@ -195,6 +274,29 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 15,
     backgroundColor: "#fff",
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 15,
+  },
+
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 1,
+    borderColor: "#007BFF",
+    backgroundColor: "white",
+    marginRight: 10,
+    justifyContent: "center", // Center the check icon
+    alignItems: "center", // Center the check icon
+  },
+  checked: {
+    backgroundColor: "#007BFF",
+  },
+  checkboxText: {
+    fontSize: 16,
+    color: "#333",
   },
   input: {
     flex: 1,
@@ -245,5 +347,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 10,
     fontFamily: "Poppins",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    height: "70%", // Adjust height as needed
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  scrollContainer: {
+    flex: 1,
+    width: "100%",
+    marginBottom: 20, // Add some spacing for the button
+  },
+  modalText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: "#333",
+    textAlign: "justify",
+  },
+  modalButton: {
+    backgroundColor: "#007BFF",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
