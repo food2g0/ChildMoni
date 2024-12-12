@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "expo-router";
-import { View, Text, TextInput, Pressable, TouchableOpacity, StyleSheet, Modal, ScrollView, } from "react-native";
+import { View, Text, TextInput, Pressable, TouchableOpacity, StyleSheet, Modal, ScrollView, ActivityIndicator } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { useNavigation } from "@react-navigation/native"; // Import navigati
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../../firebaseConfig";
 
 export default function Signup() {
 
@@ -31,8 +34,18 @@ export default function Signup() {
   const [phoneError, setPhoneError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
-
+  const [isLoading, setIsLoading] = useState(false); // Loading state
   const navigation = useNavigation();
+  const [pin, setPin] = useState(["", "", "", ""]); 
+  const [focusIndex, setFocusIndex] = useState(0); 
+  const pinInputRefs = useRef([]);
+
+  const handlePinChange = (text) => {
+    if (/^\d{0,4}$/.test(text)) { // Only allow 4 digits max
+      setPin(text);
+    }
+  };
+
 
   const handleLoginPress = () => {
     navigation.navigate("login/login");
@@ -61,6 +74,10 @@ export default function Signup() {
     if (confirmPassword !== password) return "Passwords do not match.";
     return "";
   };
+  const validatePin = (pin) => {
+    if (!pin || pin.length !== 4) return "PIN is required and must be 4 digits.";
+    return "";
+  };
 
   const handleEmailChange = (value) => {
     setEmail(value);
@@ -81,26 +98,57 @@ export default function Signup() {
     setConfirmPassword(value);
     setConfirmPasswordError(validateConfirmPassword(value));
   };
-
-  const handleSignup = () => {
+  
+  const handleSignup = async () => {
     // Perform final validation
     const finalEmailError = validateEmail(email);
     const finalPhoneError = validatePhone(phone);
     const finalPasswordError = validatePassword(password);
     const finalConfirmPasswordError = validateConfirmPassword(confirmPassword);
-
-    if (finalEmailError || finalPhoneError || finalPasswordError || finalConfirmPasswordError) {
+    const finalPinError = validatePin(pin);
+  
+    console.log("Email Error:", finalEmailError);
+    console.log("Phone Error:", finalPhoneError);
+    console.log("Password Error:", finalPasswordError);
+    console.log("Confirm Password Error:", finalConfirmPasswordError);
+    console.log("PIN Error:", finalPinError);
+  
+    if (finalEmailError || finalPhoneError || finalPasswordError || finalConfirmPasswordError || finalPinError) {
       setEmailError(finalEmailError);
       setPhoneError(finalPhoneError);
       setPasswordError(finalPasswordError);
       setConfirmPasswordError(finalConfirmPasswordError);
       return;
     }
-
-    // If validation passes, navigate to home
-    console.log("Signup successful with:", { email, phone, password });
-    navigation.navigate("home"); // Navigate to home screen
+    setIsLoading(true); // Start loading indicator
+    try {
+      console.log("Attempting to sign up...");
+      // Firebase Authentication: Sign up user
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      console.log("User registered:", user);
+  
+      // Firestore: Create a reference to the user's document in the 'Parent' collection
+      const userRef = doc(db, "Parent", user.uid); // This is the correct DocumentReference
+      console.log("Firestore Document Reference:", userRef);
+  
+      // Store user details in Firestore under the 'Parent' collection
+      await setDoc(userRef, {
+        email,
+        phone,
+        pin,
+        createdAt: new Date().toISOString(),
+      });
+      setIsLoading(false); // Stop loading indicator
+      console.log("User data saved to Firestore");
+      navigation.navigate("chooseScreen"); // Navigate to home screen
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Error signing up:", error);
+      alert("Error signing up: " + error.message);
+    }
   };
+  
 
   return (
     <View style={styles.container}>
@@ -141,6 +189,8 @@ export default function Signup() {
           onChangeText={handlePasswordChange}
           secureTextEntry={!showPassword}
         />
+        
+
         <TouchableOpacity
           style={styles.eyeIcon}
           onPress={() => setShowPassword((prev) => !prev)}
@@ -160,7 +210,19 @@ export default function Signup() {
           secureTextEntry={!showPassword}
         />
       </View>
+
+
       {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
+
+      <TextInput
+        style={styles.pinInput}
+        value={pin}
+        onChangeText={handlePinChange}
+        keyboardType="numeric"
+        maxLength={4} // Allow only 4 digits
+        placeholder="Enter 4-digit PIN"
+        secureTextEntry={false} // Optional: Hide the text
+      />
 
       <TouchableOpacity onPress={toggleCheckbox} style={styles.checkboxContainer}>
         <View style={[styles.checkbox, isTermsChecked && styles.checked]}>
@@ -225,18 +287,16 @@ In no event shall we be liable for any direct, indirect, incidental, consequenti
 
 
       <TouchableOpacity
-        style={[
-          styles.button,
-          emailError || phoneError || passwordError || confirmPasswordError || !isTermsChecked
-            ? { backgroundColor: "#ccc" }
-            : { backgroundColor: "#ADD8E6" },
-        ]}
-        disabled={
-          !!emailError || !!phoneError || !!passwordError || !!confirmPasswordError || !isTermsChecked
-        }
-        onPress={handleSignup}
+    style={[styles.button, emailError || phoneError || passwordError || confirmPasswordError || !isTermsChecked || pin.length !== 4 ? { backgroundColor: "#ccc" } : { backgroundColor: "#ADD8E6" }]}
+    disabled={!!emailError || !!phoneError || !!passwordError || !!confirmPasswordError || !isTermsChecked || pin.length !== 4}
+    onPress={handleSignup}
+        
       >
-        <Text style={styles.buttonText}>Sign Up</Text>
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Sign Up</Text>
+        )}
       </TouchableOpacity>
 
       <View style={styles.footer}>
@@ -387,5 +447,15 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  pinInput: {
+    width: "100%",
+    height: 50,
+    borderWidth: 1,
+    borderColor: "#FFC0CB",
+    borderRadius: 10,
+    fontSize: 18,
+    textAlign: "center",
+    marginVertical: 20,
   },
 });

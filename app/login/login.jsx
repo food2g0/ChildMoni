@@ -1,31 +1,42 @@
-import { useNavigation } from '@react-navigation/native'; // Import useNavigation hook
+import { useNavigation } from '@react-navigation/native';
 import React, { useState } from "react";
-import { View, Text,Image, TextInput, TouchableOpacity, StyleSheet, Pressable, Alert } from "react-native";
-import Icon from "react-native-vector-icons/FontAwesome"; // Import icons
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Pressable } from "react-native";
+import Icon from "react-native-vector-icons/FontAwesome";
+import { auth } from '../../firebaseConfig'; 
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false); 
-  const navigation = useNavigation(); // Initialize navigation
+  const [errorMessage, setErrorMessage] = useState(""); // State to hold the error message
+  const navigation = useNavigation();
 
   const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    setErrorMessage(""); // Reset error message on each login attempt
     if (!email || !password) {
-      Alert.alert("Validation Error", "Please fill in both email and password.");
+      setErrorMessage("Please fill in both email and password.");
       return;
     }
     if (!isValidEmail(email)) {
-      Alert.alert("Validation Error", "Please enter a valid email address.");
+      setErrorMessage("Please enter a valid email address.");
       return;
     }
 
-    console.log("Email:", email, "Password:", password);
-    navigation.navigate('chooseScreen'); // Navigate to home screen
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      console.log("User logged in:", user);
+      navigation.navigate('chooseScreen'); // Navigate to choose screen
+    } catch (error) {
+      console.error("Error signing in:", error);
+      setErrorMessage("Invalid credentials or network issue.");
+    }
   };
 
   const handleSignupPress = () => {
@@ -33,13 +44,9 @@ export default function LoginScreen() {
   };
 
   return (
-    
     <View style={styles.container}>
-        <View style={styles.logoContainer}>
-        {/* <Image
-     source={require('./../assets/images/logo.png')}
-        style={styles.logo}
-      /> */}
+      <View style={styles.logoContainer}>
+        {/* <Image source={require('./../assets/images/logo.png')} style={styles.logo} /> */}
       </View>
       <View style={styles.welcomeContainer}>
         <Text style={styles.welcomeText}>Welcome To</Text>
@@ -75,6 +82,11 @@ export default function LoginScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Display validation error message if any */}
+      {errorMessage ? (
+        <Text style={styles.errorText}>{errorMessage}</Text>
+      ) : null}
+
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
@@ -97,7 +109,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     paddingHorizontal: 20,
   },
-  
   welcomeContainer: {
     marginTop: 50,
     flexDirection: "column", 
@@ -113,7 +124,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'Poppins-medium',
     color: "#ff9ed1",
-
   },
   inputContainer: {
     flexDirection: "row",
@@ -141,7 +151,6 @@ const styles = StyleSheet.create({
     color: "#1b263b",
   },
   button: {
-
     width: "100%",
     height: 50,
     backgroundColor: "#ADD8E6",
@@ -149,7 +158,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,
-
   },
   buttonText: {
     color: "#2b2d42",
@@ -170,5 +178,11 @@ const styles = StyleSheet.create({
     color: "#007BFF",
     marginLeft: 10,
     fontFamily: "Poppins",
+  },
+  errorText: {
+    color: "red",
+    fontSize: 14,
+    fontFamily: 'Poppins',
+    marginBottom: 10,
   },
 });

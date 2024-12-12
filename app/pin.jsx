@@ -1,11 +1,36 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import React, { useState, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Modal } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native'; // Import useNavigation hook
+import { auth, db } from '../firebaseConfig'; // Import your Firebase config
+import { doc, getDoc } from 'firebase/firestore'; // Import Firestore methods
 
 const Pin = () => {
   const [pin, setPin] = useState(['', '', '', '']); // State for each digit of the PIN
+  const [storedPin, setStoredPin] = useState(''); // State to hold the stored PIN
+  const [isModalVisible, setIsModalVisible] = useState(false); // Modal visibility state
   const inputs = useRef([]); // To store references to the TextInput elements
   const navigation = useNavigation(); // Initialize navigation
+
+  // Fetch the current user's PIN from Firestore
+  useEffect(() => {
+    const fetchUserPin = async () => {
+      try {
+        const userRef = doc(db, "Parent", auth.currentUser.uid); // Get reference to current user's document
+        const docSnap = await getDoc(userRef);
+        if (docSnap.exists()) {
+          setStoredPin(docSnap.data().pin); // Set the PIN from Firestore
+        } else {
+          console.log('No such document!');
+        }
+      } catch (error) {
+        console.error("Error fetching user PIN:", error);
+      }
+    };
+
+    if (auth.currentUser) {
+      fetchUserPin(); // Fetch PIN if the user is logged in
+    }
+  }, []);
 
   // Handle input change for each digit
   const handleChange = (text, index) => {
@@ -19,24 +44,39 @@ const Pin = () => {
     }
   };
 
+  // Handle backspace for deleting digits
+  const handleBackspace = (index) => {
+    // If the field is empty and we're not at the first input, move focus to the previous input
+    if (pin[index] === '' && index > 0) {
+      inputs.current[index - 1].focus(); // Focus the previous input field
+    }
+  };
+
   // Handle submit button press
   const handleSubmit = () => {
     const enteredPin = pin.join('');
     if (enteredPin.length === 4) {
-      // Example: Validate the PIN or navigate to another screen
-      navigation.navigate('home'); // Navigate to home screen
+      if (enteredPin === storedPin) {
+        // PIN matches, navigate to home
+        navigation.navigate('home'); // Navigate to home screen
+      } else {
+        // Show error modal if PIN does not match
+        setIsModalVisible(true); // Show modal with error
+      }
     } else {
       alert('Please enter a 4-digit PIN');
     }
   };
 
+  // Close modal
+  const closeModal = () => {
+    setIsModalVisible(false);
+  };
+
   return (
     <View style={styles.container}>
       {/* Logo at the top */}
-      <Image
-     source={require('./../assets/images/logo.png')}
-        style={styles.logo}
-      />
+      <Image source={require('./../assets/images/logo.png')} style={styles.logo} />
 
       <Text style={styles.title}>Enter 4-Digit PIN</Text>
 
@@ -49,6 +89,11 @@ const Pin = () => {
             maxLength={1}
             value={digit}
             onChangeText={(text) => handleChange(text, index)}
+            onKeyPress={({ nativeEvent }) => {
+              if (nativeEvent.key === 'Backspace') {
+                handleBackspace(index); // Handle backspace press
+              }
+            }}
             ref={(el) => (inputs.current[index] = el)} // Set ref for each input
             returnKeyType={index === 3 ? 'done' : 'next'} // 'Done' on last input, 'Next' on others
           />
@@ -58,6 +103,24 @@ const Pin = () => {
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
         <Text style={styles.submitButtonText}>Submit</Text>
       </TouchableOpacity>
+
+      {/* Custom Modal for incorrect PIN */}
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={isModalVisible}
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Incorrect PIN</Text>
+            <Text style={styles.modalMessage}>The entered PIN is incorrect. Please try again.</Text>
+            <TouchableOpacity style={styles.modalButton} onPress={closeModal}>
+              <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -70,15 +133,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   logo: {
-    width: 100,  // Set the logo's width
-    height: 100, // Set the logo's height
-    marginBottom: 20, // Space between the logo and the title
-    resizeMode: 'contain', // Ensures the logo scales properly
+    width: 100, 
+    height: 100, 
+    marginBottom: 20, 
+    resizeMode: 'contain', 
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
     marginBottom: 20,
+    fontFamily: 'Poppins-medium', 
   },
   pinInputContainer: {
     flexDirection: 'row',
@@ -88,11 +151,13 @@ const styles = StyleSheet.create({
   pinInput: {
     width: 50,
     height: 50,
-    borderWidth: 2,
+    margin: 5,
+    borderWidth: 1,
     borderColor: '#007BFF',
     borderRadius: 10,
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 15,
+    fontFamily: 'Poppins', 
   },
   submitButton: {
     backgroundColor: '#007BFF',
@@ -104,12 +169,43 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'Poppins-medium', 
   },
-  result: {
-    marginTop: 20,
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    fontFamily: 'Poppins', // Apply Poppins font directly
+  },
+  modalMessage: {
     fontSize: 16,
-    color: '#333',
+    marginBottom: 20,
+    fontFamily: 'Poppins', // Apply Poppins font directly
+  },
+  modalButton: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins', // Apply Poppins font directly
   },
 });
 
