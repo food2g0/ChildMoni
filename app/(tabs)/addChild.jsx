@@ -1,25 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { db } from '../../firebaseConfig'; // Import your Firebase configuration
+import { collection, addDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth'; // Import Firebase Auth
 import * as ImagePicker from 'expo-image-picker';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 export default function AddChildScreen({ navigation }) {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
-  const [pin, setPin] = useState('');  
+  const [pin, setPin] = useState('');
   const [image, setImage] = useState(null);
-  
-  
+  const [loading, setLoading] = useState(false); // State to manage loading indicator
 
+  // Handle image upload (not saving to Firestore for now)
   const handleImageUpload = async () => {
-    // Request permission to access the media library
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Denied', 'We need media library permissions to pick an image.');
       return;
     }
 
-    // Launch the image picker
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -28,34 +29,49 @@ export default function AddChildScreen({ navigation }) {
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri); // Update state with the selected image
+      setImage(result.assets[0].uri); // Update state with selected image
     }
   };
-  const handleSubmit = () => {
-    if (!name || !age || !pin || !image) {
+
+  // Handle submit
+  const handleSubmit = async () => {
+    if (!name || !age || !pin) {
       Alert.alert('Error', 'Please fill out all fields before submitting.');
       return;
     }
 
-    // Submit the data (can be API call or navigation to another screen)
-    Alert.alert('Success', 'Child added successfully!');
-    // Here you can navigate to a different screen if needed
-    navigation.goBack();
+    setLoading(true); // Set loading state to true to show the indicator
+
+    try {
+      // Get the current authenticated user's ID
+      const auth = getAuth();
+      const userId = auth.currentUser.uid; // Get the parent userId from Firebase Authentication
+
+      // Create a reference to the 'children' sub-collection under the current parent's document
+      const childrenCollectionRef = collection(db, 'Parent', userId, 'children');
+
+      // Add the new child to the 'children' sub-collection
+      await addDoc(childrenCollectionRef, {
+        name,
+        age,
+        pin,
+        createdAt: new Date(),
+      });
+
+      // Show success alert and navigate back
+      Alert.alert('Success', 'Child added successfully!');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error adding child: ', error);
+      Alert.alert('Error', 'There was an issue adding the child. Please try again.');
+    } finally {
+      setLoading(false); // Set loading state to false to hide the indicator
+    }
   };
 
   return (
     <View style={styles.container}>
-      {/* App Bar */}
-      <View style={styles.appBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-left" size={20} color="#14213d" />
-        </TouchableOpacity>
-        <Text style={styles.appBarTitle}>Add Child</Text>
-      </View>
-
-      {/* Content */}
       <View style={styles.content}>
-        {/* Upload Image */}
         <TouchableOpacity style={styles.imageUpload} onPress={handleImageUpload}>
           {image ? (
             <Image source={{ uri: image }} style={styles.imagePreview} />
@@ -87,6 +103,8 @@ export default function AddChildScreen({ navigation }) {
             keyboardType="numeric"
           />
         </View>
+
+        {/* Pin Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Pin</Text>
           <TextInput
@@ -99,12 +117,13 @@ export default function AddChildScreen({ navigation }) {
           />
         </View>
 
-    
-
-
         {/* Submit Button */}
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Add Child</Text>
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator size="small" color="#14213d" />
+          ) : (
+            <Text style={styles.submitButtonText}>Add Child</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -115,27 +134,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFF',
-  },
-  appBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFC0CB',
-    height: 60,
-    paddingHorizontal: 15,
-    elevation: 3,
-    zIndex: 10,
-  },
-  backButton: {
-    marginRight: 10,
-  },
-  appBarTitle: {
-    fontSize: 18,
-    fontFamily: 'Poppins-medium',
-    color: '#14213d',
   },
   content: {
     flex: 1,
@@ -180,6 +178,8 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   submitButtonText: {
     fontSize: 16,

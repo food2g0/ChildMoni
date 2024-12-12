@@ -1,22 +1,66 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
+import { db } from '../../firebaseConfig'; // Import your Firebase configuration
+import { collection, getDocs } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth'; // Import Firebase Auth
 
 export default function ChildUserScreen() {
   const navigation = useNavigation();
+  const [childUsers, setChildUsers] = useState([]);
+  const [loading, setLoading] = useState(true); // Loading state
 
-  // Static data for child users
-  const childUsers = [
-    { id: '1', name: 'John Doe', age: 10, email: 'john.doe@example.com', birthday: '2013-06-15' },
-    { id: '2', name: 'Jane Smith', age: 8, email: 'jane.smith@example.com', birthday: '2015-03-22' },
-    { id: '3', name: 'Alice Brown', age: 12, email: 'alice.brown@example.com', birthday: '2011-09-09' },
-  ];
+  useEffect(() => {
+   
+    const fetchChildUsers = async () => {
+      try {
 
-  // Function to navigate to the details screen
+        const auth = getAuth();
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+
+        if (!userId) {
+          Alert.alert('Error', 'No user is logged in.');
+          return;
+        }
+
+        
+        const childCollectionRef = collection(db, 'Parent', userId, 'children');
+        const snapshot = await getDocs(childCollectionRef);
+        
+        // Map the snapshot data to an array
+        const childrenData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(), 
+        }));
+
+        // Set the fetched data in state
+        setChildUsers(childrenData);
+      } catch (error) {
+        console.error('Error fetching child users:', error);
+        Alert.alert('Error', 'There was an issue fetching the child users.');
+      } finally {
+        setLoading(false); 
+      }
+    };
+
+    fetchChildUsers();
+  }, []);
+
+
   const handleChildPress = (child) => {
     navigation.navigate('ChildDetails', { child });
   };
+
+  if (loading) {
+    
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FFC0CB" />
+        <Text style={styles.loadingText}>Loading Children...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -29,7 +73,7 @@ export default function ChildUserScreen() {
 
       <Text style={styles.header}>Child Users</Text>
 
-      {/* List of child users */}
+     
       <FlatList
         data={childUsers}
         keyExtractor={(item) => item.id}
@@ -98,5 +142,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Poppins-regular',
     color: '#000',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#14213d',
   },
 });

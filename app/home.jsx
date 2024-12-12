@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, ActivityIndicator, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Icon library for Add button
 import MapView, { Marker } from 'react-native-maps'; // Map view for showing location
 import { useNavigation } from '@react-navigation/native'; // Hook to access navigation
-
-const childrenList = [
-  { id: '1', name: 'John Doe', image: 'https://randomuser.me/api/portraits/men/1.jpg' },
-  { id: '2', name: 'Jane Smith', image: 'https://randomuser.me/api/portraits/women/1.jpg' },
-  { id: '3', name: 'Mary Johnson', image: 'https://randomuser.me/api/portraits/women/2.jpg' },
-];
+import { db } from '../firebaseConfig'; // Import Firebase config
+import { collection, getDocs } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth'; // Import Firebase Auth
 
 const activitiesList = [
   { id: '1', activity: 'Facebook', timeSpent: '2 hours' },
@@ -18,7 +15,8 @@ const activitiesList = [
 ];
 
 export default function HomeScreen() {
-  const [children, setChildren] = useState(childrenList);
+  const [children, setChildren] = useState([]); // State to store children data
+  const [loading, setLoading] = useState(true); // Loading state
   const [mapRegion, setMapRegion] = useState({
     latitude: 37.78825,
     longitude: -122.4324,
@@ -28,9 +26,44 @@ export default function HomeScreen() {
   
   const navigation = useNavigation(); // Accessing navigation
 
+  // Fetch child users data from Firestore
+  useEffect(() => {
+    const fetchChildrenData = async () => {
+      try {
+        // Get the current authenticated user's ID
+        const auth = getAuth();
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+
+        if (!userId) {
+          Alert.alert('Error', 'No user is logged in.');
+          return;
+        }
+
+        // Reference to 'children' collection under the current user's document
+        const childCollectionRef = collection(db, 'Parent', userId, 'children');
+        const snapshot = await getDocs(childCollectionRef);
+        
+        // Map the snapshot data to an array
+        const childrenData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          name: doc.data().name, // Get child name from Firestore
+        }));
+
+        // Set the fetched data in state
+        setChildren(childrenData);
+      } catch (error) {
+        console.error('Error fetching child users:', error);
+        Alert.alert('Error', 'There was an issue fetching the child users.');
+      } finally {
+        setLoading(false); // Set loading to false once data is fetched
+      }
+    };
+
+    fetchChildrenData();
+  }, []); // Empty dependency array to run this effect once on component mount
+
   const addChild = () => {
-    const newChild = { id: (children.length + 1).toString(), name: `Child ${children.length + 1}`, image: 'https://randomuser.me/api/portraits/men/2.jpg' };
-    setChildren([...children, newChild]); 
+    navigation.navigate('addChild'); // Navigate to the AddChild screen
   };
 
   const renderHeader = () => (
@@ -45,8 +78,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         {/* Add a button to open the drawer */}
-       
-
         <FlatList
           data={children}
           renderItem={({ item }) => (
@@ -54,8 +85,8 @@ export default function HomeScreen() {
               style={styles.childItemContainer}
               onPress={() => navigation.navigate('ChildDetails')}
             >
-              <Image source={{ uri: item.image }} style={styles.childImage} />
-              <Text style={styles.childName}>{item.name}</Text>
+              <Image source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }} style={styles.childImage} /> {/* Static image */}
+              <Text style={styles.childName}>{item.name}</Text> {/* Text inside the <Text> component */}
             </TouchableOpacity>
           )}
           keyExtractor={(item) => item.id}
@@ -65,7 +96,6 @@ export default function HomeScreen() {
       </View>
 
       {/* Map view */}
-
       <Text style={styles.headerTextOutside}>Location</Text>
       <View style={styles.mapContainer}>
         <MapView
@@ -73,19 +103,29 @@ export default function HomeScreen() {
           region={mapRegion}
           onRegionChangeComplete={setMapRegion}
         >
-      
           <Marker coordinate={mapRegion} />
         </MapView>
       </View>
     </View>
   );
+
   const renderItem = ({ item }) => (
     <View style={styles.activitySection}>
       <Text style={styles.activityText}>
-        {item.activity} - <Text style={styles.timeSpent}>{item.timeSpent}</Text>
+        {item.activity} - <Text style={styles.timeSpent}>{item.timeSpent}</Text> {/* Correct placement of text */}
       </Text>
     </View>
   );
+
+  if (loading) {
+    // Show loading spinner while fetching data
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FFC0CB" />
+        <Text style={styles.loadingText}>Loading Children...</Text> {/* Correct placement of loading text */}
+      </View>
+    );
+  }
 
   return (
     <FlatList
@@ -153,14 +193,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 15,
   },
-  drawerButton: {
-    backgroundColor: '#007BFF',
-    padding: 15,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 15,
-  },
   mapContainer: {
     flex: 1,
     borderRadius: 20,
@@ -190,5 +222,15 @@ const styles = StyleSheet.create({
   timeSpent: {
     color: '#007BFF', // Style the time spent text
     fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#14213d',
   },
 });

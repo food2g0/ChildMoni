@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, StyleSheet, Text, SafeAreaView, View } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createStackNavigator } from '@react-navigation/stack';
+import { useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DrawerActions } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -21,7 +22,9 @@ import ChildHome from './childHome';
 import Pin from './pin';
 import allChild from './screen/AllChild';
 import ChildPin from './screen/ChildPin';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { auth } from '../firebaseConfig';
+import { signOut } from 'firebase/auth';
 
 // Screens for Tabs
 import AddChildScreen from './(tabs)/addChild';
@@ -35,8 +38,13 @@ const Tab = createBottomTabNavigator();
 // Custom Drawer Content
 function CustomDrawerContent(props) {
   const handleLogout = () => {
-    // Implement logout logic here
-    props.navigation.navigate('login/login');
+    signOut(auth)
+      .then(() => {
+        // User logged out successfully, no need for additional action
+      })
+      .catch((error) => {
+        console.error('Error during logout:', error.message);
+      });
   };
 
   return (
@@ -164,12 +172,42 @@ function HomeWithDrawer() {
 
 // Main Stack Navigator
 export default function RootLayout() {
+  const [isLoggedIn, setIsLoggedIn] = useState(null);  // Track login state
+  const navigation = useNavigation();  // Hook to navigate programmatically
+
 
   useFonts({
     'Poppins': require('./../assets/fonts/Poppins-Regular.ttf'),
     'Poppins-medium': require('./../assets/fonts/Poppins-Medium.ttf'),
     'Poppins-bold': require('./../assets/fonts/Poppins-Bold.ttf'),
   });
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const userToken = await AsyncStorage.getItem('userToken');  // Check for saved token
+        if (userToken) {
+          setIsLoggedIn(true);  // User is logged in
+          navigation.navigate('home');  // Navigate to the home screen
+        } else {
+          setIsLoggedIn(false);  // User is not logged in
+          navigation.navigate('login/login');  // Navigate to login screen
+        }
+      } catch (error) {
+        console.error('Error checking login status', error);
+      }
+    };
+
+    checkLoginStatus();  // Run the check on component mount
+  }, [navigation]);
+
+  if (isLoggedIn === null) {
+    // Optionally show a loading screen while checking the login status
+    return (
+      <SafeAreaView>
+        <Text>Loading...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <Stack.Navigator   screenOptions={{
@@ -231,6 +269,17 @@ export default function RootLayout() {
       headerLeft: () => null,
        headerTitleAlign: "center", 
        gestureEnabled: false, 
+  }}
+/>
+
+<Stack.Screen
+      name="addChild"
+      component={AddChildScreen}
+      options={{
+      headerShown: true,
+      title: "Add Child", 
+       headerTitleAlign: "center", 
+       gestureEnabled: true, 
   }}
 />
 
