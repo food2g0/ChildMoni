@@ -24,13 +24,13 @@ export default function HomeScreen() {
     longitudeDelta: 0.0421,
   });
   
-  const navigation = useNavigation(); // Accessing navigation
+  const navigation = useNavigation();
 
-  // Fetch child users data from Firestore
+ 
   useEffect(() => {
     const fetchChildrenData = async () => {
       try {
-        // Get the current authenticated user's ID
+       
         const auth = getAuth();
         const userId = auth.currentUser ? auth.currentUser.uid : null;
 
@@ -39,45 +39,44 @@ export default function HomeScreen() {
           return;
         }
 
-        // Reference to 'children' collection under the current user's document
         const childCollectionRef = collection(db, 'Parent', userId, 'children');
         const snapshot = await getDocs(childCollectionRef);
         
-        // Map the snapshot data to an array
+       
         const childrenData = snapshot.docs.map(doc => ({
           id: doc.id,
-          name: doc.data().name, // Get child name from Firestore
+          name: doc.data().name, 
         }));
 
-        // Set the fetched data in state
+      
         setChildren(childrenData);
       } catch (error) {
         console.error('Error fetching child users:', error);
         Alert.alert('Error', 'There was an issue fetching the child users.');
       } finally {
-        setLoading(false); // Set loading to false once data is fetched
+        setLoading(false); 
       }
     };
 
     fetchChildrenData();
-  }, []); // Empty dependency array to run this effect once on component mount
+  }, []); 
 
   const addChild = () => {
-    navigation.navigate('addChild'); // Navigate to the AddChild screen
+    navigation.navigate('addChild'); 
   };
 
   const renderHeader = () => (
     <View style={styles.container}>
-      {/* "Your Children" text at the top */}
+   
       <Text style={styles.headerTextOutside}>Your Children</Text>
 
-      {/* Header with child list */}
+  
       <View style={styles.headerContainer}>
         <TouchableOpacity style={styles.addButton} onPress={addChild}>
           <Icon name="plus" size={20} color="#DAECF2" />
         </TouchableOpacity>
 
-        {/* Add a button to open the drawer */}
+
         <FlatList
           data={children}
           renderItem={({ item }) => (
@@ -181,7 +180,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   childName: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#14213d',
     fontFamily: 'Poppins',
   },
@@ -191,7 +190,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 15,
+    marginRight: 25,
   },
   mapContainer: {
     flex: 1,

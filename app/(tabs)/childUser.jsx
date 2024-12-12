@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { db } from '../../firebaseConfig'; // Import your Firebase configuration
@@ -64,15 +64,9 @@ export default function ChildUserScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.appBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-left" size={20} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.appBarTitle}>My Children</Text>
-      </View>
+     
 
-      <Text style={styles.header}>Child Users</Text>
-
+        <Image source={require('./../../assets/images/logo.png')} style={styles.logo} />
      
       <FlatList
         data={childUsers}
@@ -95,24 +89,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+    alignItems: "center",
   },
-  appBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFC0CB',
-    height: 60,
-    paddingHorizontal: 15,
-    marginBottom: 20,
+  logo: {
+    
+    width: 100, 
+    height: 100, 
+    marginBottom: 20, 
+    resizeMode: 'contain', 
   },
-  backButton: {
-    marginRight: 10,
-    color: '#14213d',
-  },
-  appBarTitle: {
-    fontSize: 18,
-    fontFamily: 'Poppins-medium',
-    color: '#14213d',
-  },
+
   header: {
     paddingLeft: 10,
     fontSize: 22,
@@ -122,7 +108,7 @@ const styles = StyleSheet.create({
   },
   childCard: {
     padding: 15,
-    backgroundColor: '#FFC0CB',
+    backgroundColor: '#e6f3f8',
     borderRadius: 10,
     marginBottom: 15,
     elevation: 3,

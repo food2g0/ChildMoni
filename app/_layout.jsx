@@ -18,7 +18,7 @@ import BlockScreen from './screen/BlockScreen';
 import AppLimitsScreen from './screen/AppLimitsScreen';
 import GPSScreen from './screen/GpsScreen';
 import ChildLogin from './login/childLogin';
-import ChildHome from './childHome';
+import ChildHome from './childHome'; // Without the extension
 import Pin from './pin';
 import allChild from './screen/AllChild';
 import ChildPin from './screen/ChildPin';
@@ -37,14 +37,15 @@ const Tab = createBottomTabNavigator();
 
 // Custom Drawer Content
 function CustomDrawerContent(props) {
-  const handleLogout = () => {
-    signOut(auth)
-      .then(() => {
-        // User logged out successfully, no need for additional action
-      })
-      .catch((error) => {
-        console.error('Error during logout:', error.message);
-      });
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      await AsyncStorage.removeItem('userToken');
+      props.navigation.navigate('login/login');
+    } catch (error) {
+      console.error('Error during logout:', error.message);
+      Alert.alert('Error', 'Unable to log out. Please try again.');
+    }
   };
 
   return (
@@ -100,16 +101,27 @@ function ChildManagementTabs() {
         name="Add Child"
         component={AddChildScreen}
         options={{
-          headerShown: false,
+          headerTitle: 'Add Child',
+          headerStyle: { backgroundColor: '#FFC0CB' },
+          headerTintColor: '#14213d',
+          headerTitleStyle: { fontFamily: 'Poppins-medium', fontSize: 18 },
+          headerTitleAlign: 'center',
+          headerShown: true,
           tabBarIcon: ({ color, size }) => <Icon name="user-plus" size={size} color={color} />,
         }}
+     
       />
       <Tab.Screen
         name="Child Users"
         component={ChildUsersScreen}
         options={{
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => <Icon name="users" size={size} color={color} />,
+          headerTitle: 'My Children',
+          headerStyle: { backgroundColor: '#FFC0CB' },
+          headerTintColor: '#14213d',
+          headerTitleStyle: { fontFamily: 'Poppins-medium', fontSize: 18 },
+          headerTitleAlign: 'center',
+          headerShown: true,
+          tabBarIcon: ({ color, size }) => <Icon name="user-plus" size={size} color={color} />,
         }}
       />
     </Tab.Navigator>
@@ -293,8 +305,8 @@ export default function RootLayout() {
       {/* Use HomeWithDrawer here */}
       <Stack.Screen
         name="home"
-        component={HomeWithDrawer} // Wrap Home with Drawer
-        options={{ headerShown: false }} // Drawer will handle the header
+        component={HomeWithDrawer} 
+        options={{ headerShown: false }} 
       />
        <Stack.Screen name="ChildDetails" component={ChildDetailsScreen} options={{ title: 'Child Details' }} />
        <Stack.Screen name="BlockScreen" component={BlockScreen} />
